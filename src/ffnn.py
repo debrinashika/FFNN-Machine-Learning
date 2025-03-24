@@ -35,11 +35,11 @@ class FFNN:
 
     def calcLoss(self, output: list[float], target: list[float]):
         if self.loss_func == "mse":
-            return np.mean((np.array(target) - np.array(output)) ** 2) / 2.0
+            return np.mean((np.array(target) - np.array(output)) ** 2)
         elif self.loss_func == "binary":
             pass
         elif self.loss_func == "categorical":
-            pass
+            return -np.mean(np.sum(target * np.log(output + 1e-9), axis=1))
 
     def updateWeight(self):
         for idx, layer in enumerate(self.layers):
@@ -66,7 +66,7 @@ class FFNN:
             # self.initDeltaGradien()
             error = 0
             
-            for i, batch in enumerate(self.input):
+            for j, batch in enumerate(self.input):
                 batch = np.array(batch)  
                 batch_size = batch.shape[0]
                 bias = np.ones((batch_size, 1))
@@ -74,6 +74,7 @@ class FFNN:
 
                 for layer in self.layers:
                     print("Sebelum aktivasi:", current)
+                    # print(layer.weight)
                     net = np.dot(current,layer.weight) 
                     current = layer.activ_func(net)
                     print("Setelah aktivasi:", current)  
@@ -82,7 +83,9 @@ class FFNN:
                         bias = np.ones((batch_size, 1))
                         current = np.hstack((bias, current))  
 
-                error += self.calcLoss(self.target[i],current[0])
+                # print(f"Target : {self.target[j]}")
+                # print(f"output : {current[j]}")
+                error += self.calcLoss(self.target[j],current[j]) 
             
             print(f"Epoch {i+1}, Loss: {error}")
 

@@ -6,3 +6,6 @@ def tanh(x):
 def softmax(x):
     e = np.exp(x - np.max(x))  
     return e / np.sum(e, axis=0, keepdims=True)
+
+def linear(x):
+    return x
