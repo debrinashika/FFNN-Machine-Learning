@@ -121,9 +121,9 @@ class FFNN:
                 elif self.layers[i].activ_func == activations.tanh:
                     delta1 = tanOutput(inputs[i+1], nets, target)  
                 elif self.layers[i].activ_func == activations.linear:
-                    # print(f"Current input: {inputs[i+1]}")
-                    # print(f"Current Target: {target}")
-                    delta1 = linearOutput(inputs[i+1], target)  
+                    print(f"Current input: {inputs[i+1]}")
+                    print(f"Current Target: {target}")
+                    delta1 = linearOutput(inputs[i+1], target, self.batch_size)  
                     # print(f"Current delta1: {delta1}")
                 
             else:  # Hidden layer

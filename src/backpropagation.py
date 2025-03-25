@@ -43,9 +43,13 @@ def tanHidden(w, o, delta):
     return np.dot(w, delta) * o  
 
 
-def linearOutput(o, target):
+def linearOutput(o, target, batch_size):
     o = np.array(o) 
     target = np.array(target)
+    print(f"Shape: {len(o)}")
+    if batch_size >= 2:
+        target = target.flatten()
+    
     #turunannya selalu 1
     return (o - target) * 1
 
