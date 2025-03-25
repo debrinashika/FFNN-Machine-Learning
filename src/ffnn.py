@@ -37,7 +37,7 @@ class FFNN:
 
     def calcLoss(self, output: list[float], target: list[float]):
         if self.loss_func == "mse":
-            return np.mean((np.array(target) - np.array(output)) ** 2) / 2
+            return np.mean((np.array(target) - np.array(output)) ** 2)
         elif self.loss_func == "binary":
             pass
         elif self.loss_func == "categorical":
