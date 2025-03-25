@@ -1,7 +1,7 @@
 import numpy as np
 from layers import Layers 
 import activations 
-from backpropagation import softmaxOutput, softmaxHidden, tanOutput, tanHidden
+from backpropagation import softmaxOutput, softmaxHidden, tanOutput, tanHidden, linearOutput, linearHidden
 
 class FFNN:
     def __init__(self, batch_size: int, learning_rate: float, epoch: int, verbose: int, loss_func, weight_init, seed=None):
@@ -45,10 +45,15 @@ class FFNN:
 
     def updateWeight(self):
         for idx, layer in enumerate(self.layers):
-            layer.weight += self.delta_gradien[idx][0]
+            print(f"Layer {idx} before: {layer.weight}")
+            layer.weight -= self.delta_gradien[idx]
+            print(f"Layer {idx} after: {layer.weight}")
+
+        
 
     def updateGradien(self, layer_idx: int, delta: np.ndarray, input: np.ndarray):
-        grad = self.learning_rate * np.dot(input, delta)
+        grad = self.learning_rate * (np.array(input) @ np.array(delta.T))
+        grad = np.vstack((np.zeros((1,grad.shape[1])), grad)) #gradien bias di 0 dulu, masi bingung ;)
         self.delta_gradien[layer_idx] = grad
 
 
@@ -77,18 +82,23 @@ class FFNN:
                 batch_size = batch.shape[0]
                 bias = np.ones((batch_size, 1))
                 current = np.hstack((bias, batch))  
+                # print(f"current : {current}")
                 inputs.append(current.copy().transpose().tolist())
+                # print(f"input: {inputs}")
 
                 for layer in self.layers:
+                    # print(f"weight: {layer.weight}")
                     net = np.dot(current,layer.weight) 
                     current = layer.activ_func(net)
                     nets.append(net.copy().transpose().tolist())
+                    # print(f"nets: {nets}")
                     if layer != self.layers[-1]:
                         bias = np.ones((batch_size, 1))
                         current = np.hstack((bias, current))  
                     inputs.append(current.copy().transpose().tolist())
+                    print(f"input: {inputs}")
 
-                error += self.calcLoss(self.target[i],current) 
+                error += self.calcLoss(current, self.target[i]) 
                 print(f"Epoch {j+1}, Loss: {error}")
                 # print(inputs, "\n")
                 # print(nets)
@@ -97,25 +107,43 @@ class FFNN:
                 self.initDeltaGradien()
 
     def backPropagation(self, inputs, netsLayer, target):
+        print(f"Total layers : {len(self.layers)}")
         i = len(self.layers) - 1
         delta1: np.ndarray = None
         
-        while i >= 0:
+        while i >= -1:
+            print(f"i current : {i}")
             nets = np.array(netsLayer[i]).T 
-   
+
             if i == len(self.layers) - 1:  # Output layer
                 if self.layers[i].activ_func == activations.softmax:
                     delta1 = softmaxOutput(inputs[i+1], target)
                 elif self.layers[i].activ_func == activations.tanh:
                     delta1 = tanOutput(inputs[i+1], nets, target)  
+                elif self.layers[i].activ_func == activations.linear:
+                    # print(f"Current input: {inputs[i+1]}")
+                    # print(f"Current Target: {target}")
+                    delta1 = linearOutput(inputs[i+1], target)  
+                    # print(f"Current delta1: {delta1}")
+                
             else:  # Hidden layer
                 # print("LAYERR",self.layers[i + 1].weight)
                 if self.layers[i].activ_func == activations.softmax:
                     delta2 = softmaxHidden(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1)  
                 elif self.layers[i].activ_func == activations.tanh:
                     delta2 = tanHidden(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1)
+                elif self.layers[i].activ_func == activations.linear:
+                    # print(f"Current weight: {self.layers[i + 1].weight[1:]}")
+                    # print(f"Current input: {inputs[i+1][1:]}")
+                    delta2 = linearHidden(self.layers[i + 1].weight[1:], delta1)
+                    # print(f"Current delta2: {delta2}")
 
-                self.updateGradien(i + 1, delta1, self.layers[i + 1].weight)
+                self.updateGradien(i + 1, delta1,inputs[i+1][1:])
+
+                print(f"Current input: {inputs[i+1][1:]}")
+                print(f"Current delta1: {delta1}")
+                print(f"Current All gradien: {self.delta_gradien}")
+                print(f"Current gradien: {self.delta_gradien[i + 1]}")
                 delta1 = delta2
 
             i -= 1

@@ -41,3 +41,13 @@ def tanHidden(w, o, delta):
     # print(delta)
     # print(w)
     return np.dot(w, delta) * o  
+
+
+def linearOutput(o, target):
+    o = np.array(o) 
+    target = np.array(target)
+    #turunannya selalu 1
+    return (o - target) * 1
+
+def linearHidden(w, delta):
+    return np.dot(w, delta)
