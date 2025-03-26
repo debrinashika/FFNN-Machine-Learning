@@ -4,10 +4,10 @@ from activations import tanh, softmax, linear
 import numpy as np
 
 # Inisialisasi 
-ffnn = FFNN(batch_size=1, learning_rate=0.5, epoch=1, verbose=1, loss_func='mse', weight_init='custom')
+ffnn = FFNN(batch_size=1, learning_rate=0.5, epoch=10, verbose=1, loss_func='categorical', weight_init='custom')
 
-hidden_layer1 = Layers(n_inputs=2, n_neurons=2, activ_func=linear)
-output_layer = Layers(n_inputs=2, n_neurons=2, activ_func=linear)
+hidden_layer1 = Layers(n_inputs=2, n_neurons=2, activ_func=tanh)
+output_layer = Layers(n_inputs=2, n_neurons=2, activ_func=tanh)
 
 # hidden_layer1 = Layers(n_inputs=2, n_neurons=2, activ_func=linear)
 # hidden_layer2 = Layers(n_inputs=3, n_neurons=2, activ_func=linear)
@@ -25,10 +25,10 @@ ffnn.feedForward()
 
 print("Feed forward end")
 
-ffnn.plot_weight_distribution()
-ffnn.plot_gradient_distribution()
+# ffnn.plot_weight_distribution()
+# ffnn.plot_gradient_distribution()
 
-FFNN.visualize_network(ffnn)
+# FFNN.visualize_network(ffnn)
 # ilustrasi graph dalam kasus ini biar ga bingung
 # X = [[0.1, 0.5, -0.3], [0.7, -0.2, 0.4]] 
 # -> idx menggambarkan input untuk batch misal yg [0.1, 0.5, -0.3] utk batch 1

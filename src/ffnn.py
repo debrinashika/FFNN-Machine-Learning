@@ -1,7 +1,7 @@
 import numpy as np
 from layers import Layers 
 import activations 
-from backpropagation import softmaxOutput, softmaxHidden, tanOutput, tanHidden, linearOutput, linearHidden
+from backpropagation import outputLayer,hiddenLayer
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -28,16 +28,15 @@ class FFNN:
             np.random.seed(self.seed)  
         
         if self.weight_init == "custom":
-            bxh = np.array([[0.35, 0.35]])  # Bias hidden layer
-            wxh = np.array([[0.15, 0.25],  # Weight input ke hidden
+            bxh = np.array([[0.35, 0.35]]) 
+            wxh = np.array([[0.15, 0.25], 
                             [0.2, 0.3]])
-            self.layers[0].weight = np.vstack((bxh, wxh))  # Gabungkan bias dan weight
+            self.layers[0].weight = np.vstack((bxh, wxh))  
 
-            # Inisialisasi weight untuk layer output
-            bhy = np.array([[0.6, 0.6]])  # Bias output layer
-            why = np.array([[0.4, 0.5],  # Weight hidden ke output
+            bhy = np.array([[0.6, 0.6]])  
+            why = np.array([[0.4, 0.5], 
                             [0.45, 0.55]])
-            self.layers[1].weight = np.vstack((bhy, why))  # Gabungkan bias dan weight
+            self.layers[1].weight = np.vstack((bhy, why)) 
         
         else:
             for layer in self.layers:
@@ -55,9 +54,9 @@ class FFNN:
         if self.loss_func == "mse":
             return np.mean((np.array(target) - np.array(output)) ** 2)
         elif self.loss_func == "binary":
-            # y_pred = np.clip(y_pred, 1e-7, 1 - 1e-7)
-            # return -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
-            pass
+            output = np.array(output, dtype=np.float64)
+            target = np.array(target, dtype=np.float64)
+            return -np.mean(target * np.log(output + 1e-9) + (1 - target) * np.log(1 - output))
         elif self.loss_func == "categorical":
             return -np.mean(np.sum(target * np.log(output + 1e-9), axis=1))
 
@@ -70,8 +69,7 @@ class FFNN:
         
 
     def updateGradien(self, layer_idx: int, delta: np.ndarray, input: np.ndarray):
-        grad = self.learning_rate * (np.array(input) @ np.array(delta.T))
-        # grad = np.vstack((np.zeros((1,grad.shape[1])), grad)) #gradien bias di 0 dulu, masi bingung ;)
+        grad = self.learning_rate * (np.array(input) @ np.array(delta).T)
         self.delta_gradien[layer_idx] = grad
 
 
@@ -139,12 +137,12 @@ class FFNN:
                     print(f"input: {inputs}")
 
                 error += self.calcLoss(current, self.target[i]) 
-                print(f"Epoch {j+1}, Loss: {error}")
-                # print(inputs, "\n")
-                # print(nets)
+       
                 self.backPropagation(inputs, nets, self.target[i])
                 self.updateWeight()
                 self.initDeltaGradien()
+                print(f"Epoch {j+1}, Loss: {error}")
+                print("\n")
 
     def backPropagation(self, inputs, netsLayer, target):
         print(f"Total layers : {len(self.layers)}")
@@ -152,31 +150,24 @@ class FFNN:
         delta1: np.ndarray = None
         
         while i >= -1:
-            print(f"i current : {i}")
             nets = np.array(netsLayer[i]).T 
 
             if i == len(self.layers) - 1:  # Output layer
                 if self.layers[i].activ_func == activations.softmax:
-                    delta1 = softmaxOutput(inputs[i+1], target)
+                    delta1 = outputLayer(inputs[i+1], nets, target,"softmax",self.loss_func)
                 elif self.layers[i].activ_func == activations.tanh:
-                    delta1 = tanOutput(inputs[i+1], nets, target)  
+                    delta1 = outputLayer(inputs[i+1], nets, target,"tanh",self.loss_func)
                 elif self.layers[i].activ_func == activations.linear:
-                    print(f"Current input: {inputs[i+1]}")
-                    print(f"Current Target: {target}")
-                    delta1 = linearOutput(inputs[i+1], target, self.batch_size)  
-                    # print(f"Current delta1: {delta1}")
+                    delta1 = outputLayer(inputs[i+1], nets, target,"linear",self.loss_func)
                 
             else:  # Hidden layer
                 # print("LAYERR",self.layers[i + 1].weight)
                 if self.layers[i].activ_func == activations.softmax:
-                    delta2 = softmaxHidden(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1)  
+                    delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "softmax")  
                 elif self.layers[i].activ_func == activations.tanh:
-                    delta2 = tanHidden(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1)
+                    delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "tanh")  
                 elif self.layers[i].activ_func == activations.linear:
-                    # print(f"Current weight: {self.layers[i + 1].weight[1:]}")
-                    # print(f"Current input: {inputs[i+1][1:]}")
-                    delta2 = linearHidden(self.layers[i + 1].weight[1:], delta1)
-                    # print(f"Current delta2: {delta2}")
+                    delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "linear")  
 
                 self.updateGradien(i + 1, delta1,inputs[i+1])
 
