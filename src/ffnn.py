@@ -2,6 +2,8 @@ import numpy as np
 from layers import Layers 
 import activations 
 from backpropagation import softmaxOutput, softmaxHidden, tanOutput, tanHidden, linearOutput, linearHidden
+import networkx as nx
+import matplotlib.pyplot as plt
 
 class FFNN:
     def __init__(self, batch_size: int, learning_rate: float, epoch: int, verbose: int, loss_func, weight_init, seed=None):
@@ -39,7 +41,8 @@ class FFNN:
         if self.loss_func == "mse":
             return np.mean((np.array(target) - np.array(output)) ** 2)
         elif self.loss_func == "binary":
-            pass
+            y_pred = np.clip(y_pred, 1e-7, 1 - 1e-7)
+            return -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
         elif self.loss_func == "categorical":
             return -np.mean(np.sum(target * np.log(output + 1e-9), axis=1))
 
@@ -148,7 +151,35 @@ class FFNN:
 
             i -= 1
 
+    @staticmethod
+    def visualize_network(ffnn):
+        G = nx.DiGraph()
+        layer_labels = []
+        positions = {}
+        for i in range(len(ffnn.input[0][0])):
+            G.add_node(f"Input {i+1}")
+            positions[f"Input {i+1}"] = (0, -i)
+            layer_labels.append(f"Input {i+1}")
+        prev_layer_neurons = [f"Input {i+1}" for i in range(len(ffnn.input[0][0]))]
+        x_pos = 1
+        for idx, layer in enumerate(ffnn.layers):
+            current_layer_neurons = []
+            for n in range(layer.n_neurons):
+                neuron_name = f"Layer {idx+1}\n Neuron {n+1}"
+                G.add_node(neuron_name)
+                current_layer_neurons.append(neuron_name)
+                positions[neuron_name] = (x_pos, -n)
+                layer_labels.append(neuron_name)
+        
+                for prev_neuron in prev_layer_neurons:
+                    weight = layer.weight[prev_layer_neurons.index(prev_neuron)][n]
+                    G.add_edge(prev_neuron, neuron_name, weight=f"{weight:.2f}")
 
-
-                
-            
+            prev_layer_neurons = current_layer_neurons
+            x_pos += 1
+        plt.figure(figsize=(12, 8))
+        nx.draw(G, positions, with_labels=True, node_color='pink', node_size=1000, font_size=10, font_color='darkblue')
+        edge_labels = nx.get_edge_attributes(G, 'weight')
+        nx.draw_networkx_edge_labels(G, positions, edge_labels=edge_labels, font_color='red', label_pos=0.25)
+        plt.title("Feed Forward Neural Network Visualization")
+        plt.show()
