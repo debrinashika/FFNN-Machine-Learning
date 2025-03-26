@@ -26,23 +26,38 @@ class FFNN:
     def initWeight(self, lower_bound=-0.5, upper_bound=0.5, mean=0.0, variance=1.0):
         if self.seed is not None:
             np.random.seed(self.seed)  
+        
+        if self.weight_init == "custom":
+            bxh = np.array([[0.35, 0.35]])  # Bias hidden layer
+            wxh = np.array([[0.15, 0.25],  # Weight input ke hidden
+                            [0.2, 0.3]])
+            self.layers[0].weight = np.vstack((bxh, wxh))  # Gabungkan bias dan weight
 
-        for layer in self.layers:
-            if self.weight_init == "zero":
-                layer.weight = np.zeros((layer.n_inputs + 1, layer.n_neurons))
+            # Inisialisasi weight untuk layer output
+            bhy = np.array([[0.6, 0.6]])  # Bias output layer
+            why = np.array([[0.4, 0.5],  # Weight hidden ke output
+                            [0.45, 0.55]])
+            self.layers[1].weight = np.vstack((bhy, why))  # Gabungkan bias dan weight
+        
+        else:
+            for layer in self.layers:
+                if self.weight_init == "zero":
+                    layer.weight = np.zeros((layer.n_inputs + 1, layer.n_neurons))
 
-            elif self.weight_init == "uniform":
-                layer.weight = np.random.uniform(low=lower_bound, high=upper_bound, size=(layer.n_inputs + 1, layer.n_neurons))
+                elif self.weight_init == "uniform":
+                    layer.weight = np.random.uniform(low=lower_bound, high=upper_bound, size=(layer.n_inputs + 1, layer.n_neurons))
 
-            elif self.weight_init == "normal":
-                layer.weight = np.random.normal(loc=mean, scale=np.sqrt(variance), size=(layer.n_inputs + 1, layer.n_neurons))
+                elif self.weight_init == "normal":
+                    layer.weight = np.random.normal(loc=mean, scale=np.sqrt(variance), size=(layer.n_inputs + 1, layer.n_neurons))
+            
 
     def calcLoss(self, output: list[float], target: list[float]):
         if self.loss_func == "mse":
             return np.mean((np.array(target) - np.array(output)) ** 2)
         elif self.loss_func == "binary":
-            y_pred = np.clip(y_pred, 1e-7, 1 - 1e-7)
-            return -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
+            # y_pred = np.clip(y_pred, 1e-7, 1 - 1e-7)
+            # return -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
+            pass
         elif self.loss_func == "categorical":
             return -np.mean(np.sum(target * np.log(output + 1e-9), axis=1))
 
@@ -56,7 +71,7 @@ class FFNN:
 
     def updateGradien(self, layer_idx: int, delta: np.ndarray, input: np.ndarray):
         grad = self.learning_rate * (np.array(input) @ np.array(delta.T))
-        grad = np.vstack((np.zeros((1,grad.shape[1])), grad)) #gradien bias di 0 dulu, masi bingung ;)
+        # grad = np.vstack((np.zeros((1,grad.shape[1])), grad)) #gradien bias di 0 dulu, masi bingung ;)
         self.delta_gradien[layer_idx] = grad
 
 
@@ -66,6 +81,28 @@ class FFNN:
 
     def addHiddenLayer(self, layer: Layers):
         self.layers.append(layer)
+
+    def plot_weight_distribution(self):
+        for i, layer in enumerate(self.layers):
+            weights = layer.weight.flatten()  # Ubah bobot jadi 1D array
+            plt.figure(figsize=(6, 4))
+            plt.hist(weights, bins=30, alpha=0.7, color='b', edgecolor='black')
+            plt.title(f'Distribusi Bobot - Layer {i+1}')
+            plt.xlabel('Nilai Bobot')
+            plt.ylabel('Frekuensi')
+            plt.grid(True, linestyle='--', alpha=0.6)
+            plt.show()
+
+    def plot_gradient_distribution(self):
+        for i, grad in enumerate(self.delta_gradien):
+            grad = grad.flatten()  # Ubah gradien jadi 1D array
+            plt.figure(figsize=(6, 4))
+            plt.hist(grad, bins=30, alpha=0.7, color='r', edgecolor='black')
+            plt.title(f'Distribusi Gradien - Layer {i+1}')
+            plt.xlabel('Nilai Gradien')
+            plt.ylabel('Frekuensi')
+            plt.grid(True, linestyle='--', alpha=0.6)
+            plt.show()
 
     def feedForward(self):
         self.initWeight()
@@ -141,7 +178,7 @@ class FFNN:
                     delta2 = linearHidden(self.layers[i + 1].weight[1:], delta1)
                     # print(f"Current delta2: {delta2}")
 
-                self.updateGradien(i + 1, delta1,inputs[i+1][1:])
+                self.updateGradien(i + 1, delta1,inputs[i+1])
 
                 print(f"Current input: {inputs[i+1][1:]}")
                 print(f"Current delta1: {delta1}")
