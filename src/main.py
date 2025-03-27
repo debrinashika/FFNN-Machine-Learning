@@ -17,7 +17,6 @@ train_samples = 5000
 X, y = fetch_openml("mnist_784", version=1, return_X_y=True, as_frame=False, parser='auto')
 y = y.astype(int) 
 
-# Acak urutan data
 random_state = check_random_state(0)
 permutation = random_state.permutation(X.shape[0])
 X = X[permutation]
@@ -35,15 +34,13 @@ def one_hot_encode(y, num_classes=10):
 y_train_oh = one_hot_encode(y_train)
 y_test_oh = one_hot_encode(y_test)
 
-ffnn = FFNN(batch_size=train_samples, learning_rate=0.01, epoch=3, verbose=1, loss_func='mse', weight_init='normal')
+ffnn = FFNN(batch_size=train_samples, learning_rate=0.01, epoch=3, verbose=1, loss_func='mse', weight_init='normal', seed=42)
 
 hidden_layer1 = Layers(n_inputs=784, n_neurons=128, activ_func=softmax)
 output_layer = Layers(n_inputs=128, n_neurons=10, activ_func=softmax)
 ffnn.addHiddenLayer(hidden_layer1)
 ffnn.addHiddenLayer(output_layer)
 
-print(f"train : {y_train_oh.shape}")
-print(f"train : {X_train.shape}")
 ffnn.addInputTarget(X_train.tolist(), X_test, y_train_oh.tolist(), y_test_oh.tolist())
 
 print("Training model...")

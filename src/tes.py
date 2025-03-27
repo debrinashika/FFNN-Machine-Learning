@@ -3,8 +3,7 @@ from layers import Layers
 from activations import tanh, softmax, linear, sigmoid, relu
 import numpy as np
 
-# Inisialisasi FFNN dengan batch_size lebih besar
-ffnn = FFNN(batch_size=4, learning_rate=0.5, epoch=8, verbose=1, loss_func='binary', weight_init='custom')
+ffnn = FFNN(batch_size=4, learning_rate=0.5, epoch=5, verbose=1, loss_func='categorical', weight_init='he', seed=42)
 
 hidden_layer1 = Layers(n_inputs=2, n_neurons=2, activ_func=relu)
 output_layer = Layers(n_inputs=2, n_neurons=2, activ_func=softmax)
@@ -40,12 +39,13 @@ Y_val = [
     [0.16, 0.84]
 ]
 
-# Masukkan data ke dalam model
 ffnn.addInputTarget(X_train, X_val, Y_train, Y_val)
 
-# Jalankan feedforward 2x untuk melihat hasil awal dan perubahannya
 ffnn.feedForward()
+# FFNN.visualize_network(ffnn)
 print("Feed forward pertama selesai")
+
+ffnn.feedForward()
 
 # ffnn.plot_weight_distribution()
 # ffnn.plot_gradient_distribution()
