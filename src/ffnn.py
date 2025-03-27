@@ -32,12 +32,10 @@ class FFNN:
             wxh = np.array([[0.15, 0.25], 
                             [0.2, 0.3]])
             self.layers[0].weight = np.vstack((bxh, wxh))  
-
             bhy = np.array([[0.6, 0.6]])  
             why = np.array([[0.4, 0.5], 
                             [0.45, 0.55]])
             self.layers[1].weight = np.vstack((bhy, why)) 
-        
         else:
             for layer in self.layers:
                 if self.weight_init == "zero":
@@ -189,22 +187,27 @@ class FFNN:
             positions[f"Input {i+1}"] = (0, -i)
             layer_labels.append(f"Input {i+1}")
         prev_layer_neurons = [f"Input {i+1}" for i in range(len(ffnn.input[0][0]))]
-        x_pos = 1
+        x_pos = 1 
         for idx, layer in enumerate(ffnn.layers):
             current_layer_neurons = []
+            bias_node = f"Bias {idx+1}"
+            positions[bias_node] = (x_pos -0.5, layer.n_neurons / 3)  
+            G.add_node(bias_node)
+            layer_labels.append(bias_node)
             for n in range(layer.n_neurons):
-                neuron_name = f"Layer {idx+1}\n Neuron {n+1}"
+                neuron_name = f"Layer {idx+1}\nNeuron {n+1}"
                 G.add_node(neuron_name)
                 current_layer_neurons.append(neuron_name)
                 positions[neuron_name] = (x_pos, -n)
                 layer_labels.append(neuron_name)
-        
+                weight_bias = layer.weight[0][n] 
+                G.add_edge(bias_node, neuron_name, weight=f"{weight_bias:.2f}")
                 for prev_neuron in prev_layer_neurons:
-                    weight = layer.weight[prev_layer_neurons.index(prev_neuron)][n]
+                    weight_idx = prev_layer_neurons.index(prev_neuron) + 1 
+                    weight = layer.weight[weight_idx][n]
                     G.add_edge(prev_neuron, neuron_name, weight=f"{weight:.2f}")
-
             prev_layer_neurons = current_layer_neurons
-            x_pos += 1
+            x_pos += 1  
         plt.figure(figsize=(12, 8))
         nx.draw(G, positions, with_labels=True, node_color='pink', node_size=1000, font_size=10, font_color='darkblue')
         edge_labels = nx.get_edge_attributes(G, 'weight')
