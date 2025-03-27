@@ -42,6 +42,7 @@ def binaryDerivative(o, target):
 
 def categoricalDerivative(o, target):
     o = np.array(o) 
+    target = np.array(target).T
     batch_size, num_neurons = o.shape
     return -(target/o) * 1/batch_size
     

@@ -15,7 +15,7 @@ t0 = time.time()
 train_samples = 5000  # Jumlah sampel untuk training
 
 X, y = fetch_openml("mnist_784", version=1, return_X_y=True, as_frame=False, parser='auto')
-y = y.astype(int)  # Pastikan target dalam bentuk integer
+y = y.astype(int)  
 
 # Acak urutan data
 random_state = check_random_state(0)
@@ -31,23 +31,21 @@ X = scaler.fit_transform(X)
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_samples, test_size=10000)
 print(f"Data loaded in {time.time() - t0:.2f} seconds.")
 
-# Konversi label ke one-hot encoding
+
 def one_hot_encode(y, num_classes=10):
     return np.eye(num_classes)[y]
 
 y_train_oh = one_hot_encode(y_train)
 y_test_oh = one_hot_encode(y_test)
 
-ffnn = FFNN(batch_size=train_samples, learning_rate=0.01, epoch=1, verbose=1, loss_func='mse', weight_init='normal')
+ffnn = FFNN(batch_size=train_samples, learning_rate=0.01, epoch=10, verbose=1, loss_func='mse', weight_init='normal')
 
 hidden_layer1 = Layers(n_inputs=784, n_neurons=128, activ_func=linear)
 output_layer = Layers(n_inputs=128, n_neurons=10, activ_func=linear)
 ffnn.addHiddenLayer(hidden_layer1)
 ffnn.addHiddenLayer(output_layer)
 
-print(f"train : {y_train_oh.shape}")
-print(f"train : {X_train.shape}")
-ffnn.addInputTarget(X_train.tolist(), X_test, y_train_oh.tolist(), y_test_oh.tolist())
+ffnn.addInputTarget(X_train.tolist(), X_test.tolist(), y_train_oh.tolist(), y_test_oh.tolist())
 
 print("Training model...")
 ffnn.feedForward()
@@ -60,7 +58,7 @@ with open("ffnn_mnist_model.pkl", "wb") as f:
     pickle.dump(ffnn, f)
 print("Model saved successfully!")
 
-# Load model kembali
+
 with open("ffnn_mnist_model.pkl", "rb") as f:
     loaded_ffnn = pickle.load(f)
 print("Model loaded successfully!")
@@ -73,7 +71,7 @@ accuracy = np.mean(y_pred_labels == y_test) * 100
 print(f"Model Accuracy: {accuracy:.2f}%")
 
 print("Predicted labels:", y_pred_labels)
-print("True labels:", y_test[:10])
+print("True labels:", y_test)
 
 
 # Inisialisasi 

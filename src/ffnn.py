@@ -160,9 +160,9 @@ class FFNN:
             self.loss_train_history.append(train_error)
 
             val_error = 0
-            # val_pred = self.predict(self.input_val)
-            # val_error = self.calcLoss(val_pred, self.target_val) 
-            # self.loss_val_history.append(val_error)
+            val_pred = self.predict(self.input_val)
+            val_error = self.calcLoss(val_pred, self.target_val) 
+            self.loss_val_history.append(val_error)
 
             # **Progress Bar**
             if self.verbose == 1:
@@ -274,6 +274,8 @@ class FFNN:
         print(f"Model berhasil dimuat dari {filename}")
 
     def plot_loss(self):
+        print("Training Loss History:", self.loss_train_history)
+        print("Validation Loss History:", self.loss_val_history)
         plt.plot(self.loss_train_history, label='Training Loss', color='blue')
         plt.plot(self.loss_val_history, label='Validation Loss', color='red', linestyle='dashed')
         plt.xlabel('Epoch')
@@ -286,8 +288,13 @@ class FFNN:
 
     def predict(self, X):
         batch = np.array(X)  
+        if batch.ndim == 3:  
+            batch = batch.reshape(batch.shape[1], batch.shape[2])
+
         batch_size = batch.shape[0]
         bias = np.ones((batch_size, 1))
+        print("Bias shape:", bias.shape)
+        print("Batch shape before hstack:", batch.shape)
         current = np.hstack((bias, batch))  
         
         for layer in self.layers:
