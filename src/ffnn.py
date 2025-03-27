@@ -183,7 +183,11 @@ class FFNN:
                     delta1 = outputLayer(inputs[i+1], nets, target,"softmax",self.loss_func)
                 elif self.layers[i].activ_func == activations.tanh:
                     delta1 = outputLayer(inputs[i+1], nets, target,"tanh",self.loss_func)
-                elif self.layers[i].activ_func == activations.linear:
+                elif self.layers[i].activ_func == activations.sigmoid:
+                    delta1 = outputLayer(inputs[i+1], nets, target,"sigmoid",self.loss_func)
+                elif self.layers[i].activ_func == activations.relu:
+                    delta1 = outputLayer(inputs[i+1], nets, target,"relu",self.loss_func)
+                else: # linear
                     delta1 = outputLayer(inputs[i+1], nets, target,"linear",self.loss_func)
                 
             else:  # Hidden layer
@@ -191,8 +195,12 @@ class FFNN:
                 if self.layers[i].activ_func == activations.softmax:
                     delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "softmax")  
                 elif self.layers[i].activ_func == activations.tanh:
-                    delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "tanh")  
-                elif self.layers[i].activ_func == activations.linear:
+                    delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "tanh")
+                elif self.layers[i].activ_func == activations.sigmoid:
+                    delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "sigmoid")  
+                elif self.layers[i].activ_func == activations.relu:
+                    delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "relu")    
+                else: # linear
                     delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "linear")  
 
                 self.updateGradien(i + 1, delta1,inputs[i+1])
@@ -285,7 +293,7 @@ class FFNN:
         plt.grid(True, linestyle='--', alpha=0.6)
         plt.show()
 
-
+    
     def predict(self, X):
         batch = np.array(X)  
         if batch.ndim == 3:  
@@ -304,3 +312,5 @@ class FFNN:
                 bias = np.ones((batch_size, 1))
                 current = np.hstack((bias, current))  
         return current
+    
+        
