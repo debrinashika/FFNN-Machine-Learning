@@ -30,6 +30,9 @@ def softmaxDerivative(net):
 def mseDerivative(o, target):
     o = np.array(o) 
     batch_size, num_neurons = o.shape
+    target = np.array(target).T  # Pastikan target berbentuk array
+    print(f"o.shape: {o.shape}, target.shape: {target.shape}")
+    print(f"batch size: {batch_size}")
     return (o - target) * 2/batch_size
 
 def binaryDerivative(o, target):

@@ -4,6 +4,8 @@ import activations
 from backpropagation import outputLayer,hiddenLayer
 import networkx as nx
 import matplotlib.pyplot as plt
+import pickle
+import sys
 
 class FFNN:
     def __init__(self, batch_size: int, learning_rate: float, epoch: int, verbose: int, loss_func, weight_init, seed=None):
@@ -14,9 +16,13 @@ class FFNN:
         self.loss_func = loss_func
         self.weight_init = weight_init  
         self.seed = seed  
+        self.loss_train_history = []
+        self.loss_val_history = []
 
-        self.input: list[list[float]] = []
-        self.target: list[list[float]] = []
+        self.input_train: list[list[float]] = []
+        self.input_val: list[list[float]] = []
+        self.target_train: list[list[float]] = []
+        self.target_val: list[list[float]] = []
         self.layers: list[Layers] = []
         self.delta_gradien: list[np.ndarray] = []
 
@@ -64,23 +70,31 @@ class FFNN:
             layer.weight -= self.delta_gradien[idx]
             print(f"Layer {idx} after: {layer.weight}")
 
-        
 
     def updateGradien(self, layer_idx: int, delta: np.ndarray, input: np.ndarray):
         grad = self.learning_rate * (np.array(input) @ np.array(delta).T)
         self.delta_gradien[layer_idx] = grad
 
 
-    def addInputOutput(self, input: list[float], output: list[float]):
-        self.input.append(input)
-        self.target.append(output)
+    def addInputTarget(self, input_train: list[float], input_val: list[float], target_train: list[float], target_val: list[float]):
+        self.input_train.append(input_train)
+        self.input_val.append(input_val)
+        self.target_train.append(target_train)
+        self.target_val.append(target_val)
 
     def addHiddenLayer(self, layer: Layers):
         self.layers.append(layer)
 
-    def plot_weight_distribution(self):
-        for i, layer in enumerate(self.layers):
-            weights = layer.weight.flatten()  # Ubah bobot jadi 1D array
+    def plot_weight_distribution(self, layers_to_plot: list[int] = None):
+        if layers_to_plot is None:
+            layers_to_plot = list(range(len(self.layers))) 
+
+        for i in layers_to_plot:
+            if i < 0 or i >= len(self.layers):
+                print(f"Layer {i+1} tidak valid.")
+                continue 
+            
+            weights = self.layers[i].weight.flatten() 
             plt.figure(figsize=(6, 4))
             plt.hist(weights, bins=30, alpha=0.7, color='b', edgecolor='black')
             plt.title(f'Distribusi Bobot - Layer {i+1}')
@@ -89,9 +103,16 @@ class FFNN:
             plt.grid(True, linestyle='--', alpha=0.6)
             plt.show()
 
-    def plot_gradient_distribution(self):
-        for i, grad in enumerate(self.delta_gradien):
-            grad = grad.flatten()  # Ubah gradien jadi 1D array
+    def plot_gradient_distribution(self, layers_to_plot: list[int] = None):
+        if layers_to_plot is None:
+            layers_to_plot = list(range(len(self.delta_gradien)))  
+        
+        for i in layers_to_plot:
+            if i < 0 or i >= len(self.delta_gradien):
+                print(f"Layer {i+1} tidak valid.")
+                continue  
+            
+            grad = self.delta_gradien[i].flatten()  
             plt.figure(figsize=(6, 4))
             plt.hist(grad, bins=30, alpha=0.7, color='r', edgecolor='black')
             plt.title(f'Distribusi Gradien - Layer {i+1}')
@@ -108,39 +129,46 @@ class FFNN:
                 return
             
             self.initDeltaGradien()
-            error = 0
+            train_error = 0
             
-            for i, batch in enumerate(self.input):
+            for i, batch in enumerate(self.input_train):
                 inputs: list[list[float]] = []
                 nets: list[list[float]] = []
+                self.initDeltaGradien()
 
                 batch = np.array(batch)  
                 batch_size = batch.shape[0]
                 bias = np.ones((batch_size, 1))
                 current = np.hstack((bias, batch))  
-                # print(f"current : {current}")
                 inputs.append(current.copy().transpose().tolist())
-                # print(f"input: {inputs}")
 
                 for layer in self.layers:
-                    # print(f"weight: {layer.weight}")
                     net = np.dot(current,layer.weight) 
                     current = layer.activ_func(net)
                     nets.append(net.copy().transpose().tolist())
-                    # print(f"nets: {nets}")
                     if layer != self.layers[-1]:
                         bias = np.ones((batch_size, 1))
                         current = np.hstack((bias, current))  
                     inputs.append(current.copy().transpose().tolist())
-                    print(f"input: {inputs}")
 
-                error += self.calcLoss(current, self.target[i]) 
+                train_error += self.calcLoss(current, self.target_train[i]) 
        
-                self.backPropagation(inputs, nets, self.target[i])
+                self.backPropagation(inputs, nets, self.target_train[i])
                 self.updateWeight()
-                self.initDeltaGradien()
-                print(f"Epoch {j+1}, Loss: {error}")
                 print("\n")
+
+            self.loss_train_history.append(train_error)
+
+            val_error = 0
+            # val_pred = self.predict(self.input_val)
+            # val_error = self.calcLoss(val_pred, self.target_val) 
+            # self.loss_val_history.append(val_error)
+
+            # **Progress Bar**
+            if self.verbose == 1:
+                sys.stdout.write(f"\rEpoch {j+1}/{self.epoch} - Training Loss: {train_error:.4f}  - Validation Loss: {val_error:.4f}")
+                sys.stdout.flush()
+
 
     def backPropagation(self, inputs, netsLayer, target):
         print(f"Total layers : {len(self.layers)}")
@@ -214,3 +242,58 @@ class FFNN:
         nx.draw_networkx_edge_labels(G, positions, edge_labels=edge_labels, font_color='red', label_pos=0.25)
         plt.title("Feed Forward Neural Network Visualization")
         plt.show()
+
+
+    def save_model(self, filename):
+        model_data = {
+            "layers": [layer.weight for layer in self.layers], 
+            "batch_size": self.batch_size,
+            "learning_rate": self.learning_rate,
+            "epoch": self.epoch,
+            "loss_func": self.loss_func
+        }
+        with open(filename, "wb") as f:
+            pickle.dump(model_data, f)
+        print(f"Model berhasil disimpan ke {filename}")
+
+    def load_model(self, filename):
+        with open(filename, "rb") as f:
+            model_data = pickle.load(f)
+
+        if len(model_data["layers"]) != len(self.layers):
+            raise ValueError("Jumlah layer pada model yang dimuat tidak sesuai.")
+
+        for layer, weight in zip(self.layers, model_data["layers"]):
+            layer.weight = weight
+
+        self.batch_size = model_data["batch_size"]
+        self.learning_rate = model_data["learning_rate"]
+        self.epoch = model_data["epoch"]
+        self.loss_func = model_data["loss_func"]
+
+        print(f"Model berhasil dimuat dari {filename}")
+
+    def plot_loss(self):
+        plt.plot(self.loss_train_history, label='Training Loss', color='blue')
+        plt.plot(self.loss_val_history, label='Validation Loss', color='red', linestyle='dashed')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Training & Validation Loss')
+        plt.legend()
+        plt.grid(True, linestyle='--', alpha=0.6)
+        plt.show()
+
+
+    def predict(self, X):
+        batch = np.array(X)  
+        batch_size = batch.shape[0]
+        bias = np.ones((batch_size, 1))
+        current = np.hstack((bias, batch))  
+        
+        for layer in self.layers:
+            net = np.dot(current, layer.weight) 
+            current = layer.activ_func(net)
+            if layer != self.layers[-1]:
+                bias = np.ones((batch_size, 1))
+                current = np.hstack((bias, current))  
+        return current
