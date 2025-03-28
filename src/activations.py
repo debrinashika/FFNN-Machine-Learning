@@ -15,3 +15,9 @@ def relu(x):
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
+
+def swish(x):
+    return x / (1 + np.exp(-x))
+
+def elu(x, alpha=1.0):
+    return np.where(x > 0, x, alpha * (np.exp(x) - 1))

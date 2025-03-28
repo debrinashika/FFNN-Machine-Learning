@@ -202,6 +202,10 @@ class FFNN:
                     delta1 = outputLayer(inputs[i+1], nets, target,"sigmoid",self.loss_func)
                 elif self.layers[i].activ_func == activations.relu:
                     delta1 = outputLayer(inputs[i+1], nets, target,"relu",self.loss_func)
+                elif self.layers[i].activ_func == activations.swish:
+                    delta1 = outputLayer(inputs[i+1], nets, target,"swish",self.loss_func)
+                elif self.layers[i].activ_func == activations.elu:
+                    delta1 = outputLayer(inputs[i+1], nets, target,"elu",self.loss_func)
                 else: # linear
                     delta1 = outputLayer(inputs[i+1], nets, target,"linear",self.loss_func)
                 
@@ -214,16 +218,16 @@ class FFNN:
                 elif self.layers[i].activ_func == activations.sigmoid:
                     delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "sigmoid")  
                 elif self.layers[i].activ_func == activations.relu:
-                    delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "relu")    
+                    delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "relu")
+                elif self.layers[i].activ_func == activations.swish:
+                    delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "swish") 
+                elif self.layers[i].activ_func == activations.elu:
+                    delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "elu")           
                 else: # linear
                     delta2 = hiddenLayer(self.layers[i + 1].weight[1:], inputs[i+1][1:], delta1, "linear")  
 
                 self.updateGradien(i + 1, delta1,inputs[i+1])
 
-                # print(f"Current input: {inputs[i+1][1:]}")
-                # print(f"Current delta1: {delta1}")
-                # print(f"Current All gradien: {self.delta_gradien}")
-                # print(f"Current gradien: {self.delta_gradien[i + 1]}")
                 delta1 = delta2
 
             i -= 1
@@ -316,7 +320,6 @@ class FFNN:
         plt.legend()
         plt.grid(True, linestyle='--', alpha=0.6)
         plt.show()
-
     
     def predict(self, X):
         batch = np.array(X)  

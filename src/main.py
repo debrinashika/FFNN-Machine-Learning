@@ -1,6 +1,6 @@
 from ffnn import FFNN
 from layers import Layers 
-from activations import tanh, softmax, linear, sigmoid, relu
+from activations import tanh, softmax, linear, sigmoid, relu, swish, elu
 import numpy as np
 import time
 from sklearn.datasets import fetch_openml
@@ -36,8 +36,8 @@ y_test_oh = one_hot_encode(y_test)
 
 ffnn = FFNN(batch_size=train_samples, learning_rate=0.01, epoch=3, verbose=1, loss_func='mse', weight_init='normal', seed=42)
 
-hidden_layer1 = Layers(n_inputs=784, n_neurons=128, activ_func=softmax)
-output_layer = Layers(n_inputs=128, n_neurons=10, activ_func=softmax)
+hidden_layer1 = Layers(n_inputs=784, n_neurons=128, activ_func=linear)
+output_layer = Layers(n_inputs=128, n_neurons=10, activ_func=linear)
 ffnn.addHiddenLayer(hidden_layer1)
 ffnn.addHiddenLayer(output_layer)
 

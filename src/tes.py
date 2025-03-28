@@ -1,12 +1,12 @@
 from ffnn import FFNN
 from layers import Layers 
-from activations import tanh, softmax, linear, sigmoid, relu
+from activations import tanh, softmax, linear, sigmoid, relu, elu, swish
 import numpy as np
 
-ffnn = FFNN(batch_size=4, learning_rate=0.5, epoch=5, verbose=1, loss_func='categorical', weight_init='he', seed=42)
+ffnn = FFNN(batch_size=4, learning_rate=0.5, epoch=5, verbose=1, loss_func='mse', weight_init='he', seed=42)
 
-hidden_layer1 = Layers(n_inputs=2, n_neurons=2, activ_func=relu)
-output_layer = Layers(n_inputs=2, n_neurons=2, activ_func=softmax)
+hidden_layer1 = Layers(n_inputs=2, n_neurons=3, activ_func=swish)
+output_layer = Layers(n_inputs=3, n_neurons=2, activ_func=swish)
 
 ffnn.addHiddenLayer(hidden_layer1)
 ffnn.addHiddenLayer(output_layer)
