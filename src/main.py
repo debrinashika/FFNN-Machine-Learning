@@ -34,10 +34,10 @@ def one_hot_encode(y, num_classes=10):
 y_train_oh = one_hot_encode(y_train)
 y_test_oh = one_hot_encode(y_test)
 
-ffnn = FFNN(batch_size=train_samples, learning_rate=0.01, epoch=3, verbose=1, loss_func='mse', weight_init='normal', seed=42)
+ffnn = FFNN(batch_size=train_samples, learning_rate=0.01, epoch=3, verbose=1, loss_func='mse', weight_init='he', seed=42)
 
-hidden_layer1 = Layers(n_inputs=784, n_neurons=128, activ_func=linear)
-output_layer = Layers(n_inputs=128, n_neurons=10, activ_func=linear)
+hidden_layer1 = Layers(n_inputs=784, n_neurons=128, activ_func=relu)
+output_layer = Layers(n_inputs=128, n_neurons=10, activ_func=relu)
 ffnn.addHiddenLayer(hidden_layer1)
 ffnn.addHiddenLayer(output_layer)
 
