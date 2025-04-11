@@ -7,9 +7,10 @@ import matplotlib.pyplot as plt
 import pickle
 import sys
 import time
+from rms import RMSNorm
 
 class FFNN:
-    def __init__(self, batch_size: int, learning_rate: float, epoch: int, verbose: int, loss_func, weight_init, seed=int):
+    def __init__(self, batch_size: int, learning_rate: float, epoch: int, verbose: int, loss_func, weight_init, seed=int, regularization= None, reg_lambda = 0.01, norm = False):
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.epoch = epoch
@@ -19,6 +20,9 @@ class FFNN:
         self.loss_train_history = []
         self.loss_val_history = []
         self.seed = seed or None
+        self.regularization = regularization
+        self.reg_lambda = reg_lambda
+        self.norm = norm
 
         self.input_train: list[list[float]] = []
         self.input_val: list[list[float]] = []
@@ -61,18 +65,37 @@ class FFNN:
                     layer.weight = np.random.normal(loc=0.0, scale=np.sqrt(variance_he), size=(layer.n_inputs + 1, layer.n_neurons))
             
     def calcLoss(self, output: list[float], target: list[float]):
+        loss = 0
         if self.loss_func == "mse":
-            return np.mean((np.array(target) - np.array(output)) ** 2)
+            loss =  np.mean((np.array(target) - np.array(output)) ** 2)
         elif self.loss_func == "binary":
-            output = np.array(output, dtype=np.float64)
+            output = np.clip(output, 1e-9, 1.0 - 1e-9)
             target = np.array(target, dtype=np.float64)
-            return -np.mean(target * np.log(output + 1e-9) + (1 - target) * np.log(1 - output))
+            loss = -np.mean(target * np.log(output) + (1 - target) * np.log(1 - output))
         elif self.loss_func == "categorical":
-            return -np.mean(np.sum(target * np.log(output + 1e-9), axis=1))
+            output = np.clip(output, 1e-9, 1.0)  
+            loss = -np.mean(np.sum(target * np.log(output), axis=1))
+
+        reg_term = 0
+        if self.regularization == "l1":
+            reg_term = self.reg_lambda * sum(np.sum(np.abs(layer.weight)) for layer in self.layers)
+
+        elif self.regularization == "l2":
+            reg_term = self.reg_lambda * sum(np.sum(layer.weight ** 2) for layer in self.layers)
+
+        return loss + reg_term
 
     def updateWeight(self):
         for idx, layer in enumerate(self.layers):
-            layer.weight -= self.delta_gradien[idx]
+            reg_term = 0
+
+            if self.regularization == "l1":
+                reg_term = self.reg_lambda * np.sign(layer.weight)
+
+            elif self.regularization == "l2":
+                reg_term = self.reg_lambda * 2 * layer.weight
+
+            layer.weight -= self.delta_gradien[idx] + reg_term
         
     def updateGradien(self, layer_idx: int, delta: np.ndarray, input: np.ndarray):
         grad = self.learning_rate * (np.array(input) @ np.array(delta).T)
@@ -149,6 +172,8 @@ class FFNN:
                 for layer in self.layers:
                     net = np.dot(current, layer.weight)
                     current = layer.activ_func(net)
+                    if self.norm == True:
+                        current = RMSNorm(layer.n_neurons).forward(current)
                     nets.append(net.copy().transpose().tolist())
                     if layer != self.layers[-1]:
                         bias = np.ones((batch_size, 1))
